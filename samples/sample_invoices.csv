@@ -1,0 +1,6 @@
+invoice_number,invoice_date,supplier_name,customer_name,subtotal,tax,total,currency,status
+INV-CSV-001,2024-01-10,Alpha Tech Solutions,Beta Corp,1500.00,225.00,1725.00,USD,paid
+INV-CSV-002,2024-01-15,Gamma Logistics,Delta Inc,3200.00,512.00,3712.00,USD,pending
+INV-CSV-003,2024-02-01,Epsilon Services,Zeta Ltd,890.00,160.20,1050.20,EUR,overdue
+INV-CSV-004,2024-02-14,Eta Consulting,Theta GmbH,5600.00,1008.00,6608.00,EUR,paid
+INV-CSV-005,2024-03-05,Iota Systems,Kappa Corp,12000.00,1200.00,13200.00,GBP,pending
