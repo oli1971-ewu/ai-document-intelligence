@@ -163,7 +163,67 @@ def _find_str(text: str, *labels: str, maxlen: int = 200) -> str | None:
     return None
 
 
+def _extract_tabular_data(text: str) -> InvoiceModel | None:
+    """Extract invoice information if text is CSV or TSV formatted."""
+    import csv
+    import io
+    try:
+        first_line = text.strip().split("\n")[0].lower()
+        if "invoice_number" in first_line or "invoice_no" in first_line or "inv_no" in first_line:
+            reader = csv.DictReader(io.StringIO(text.strip()))
+            rows = list(reader)
+            if rows:
+                # Aggregate or take representative row
+                r = rows[0]
+                inv_no = r.get("invoice_number") or r.get("invoice_no") or r.get("Invoice No")
+                supplier = r.get("supplier_name") or r.get("supplier") or r.get("Supplier")
+                customer = r.get("customer_name") or r.get("customer") or r.get("Customer")
+                date_str = r.get("invoice_date") or r.get("date") or r.get("Date")
+                currency = r.get("currency") or r.get("Currency")
+                
+                def _to_float(v):
+                    try:
+                        return float(str(v).replace(",", "").replace("$", "").replace("€", "").strip())
+                    except Exception:
+                        return None
+
+                subtotal = _to_float(r.get("subtotal") or r.get("Subtotal"))
+                tax = _to_float(r.get("tax") or r.get("Tax") or r.get("vat") or r.get("VAT"))
+                total = _to_float(r.get("total") or r.get("Total"))
+
+                line_items = []
+                for row in rows:
+                    desc = row.get("line_item_description") or row.get("description") or row.get("Description")
+                    qty = _to_float(row.get("quantity") or row.get("Qty"))
+                    price = _to_float(row.get("unit_price") or row.get("Price"))
+                    amt = _to_float(row.get("line_total") or row.get("amount") or row.get("Amount"))
+                    if desc or amt is not None:
+                        line_items.append(
+                            LineItemModel(description=desc, quantity=qty, unit_price=price, amount=amt)
+                        )
+
+                return InvoiceModel(
+                    invoice_number=inv_no,
+                    invoice_date=date_str,
+                    supplier_name=supplier,
+                    customer_name=customer,
+                    subtotal=subtotal,
+                    tax=tax,
+                    total=total,
+                    currency=currency or "USD",
+                    line_items=line_items,
+                    confidence=0.95,
+                )
+    except Exception:
+        pass
+    return None
+
+
 def _extract_rule_based(text: str) -> InvoiceModel:
+    tabular = _extract_tabular_data(text)
+    if tabular:
+        return tabular
+
     invoice_number = _find_str(text, "invoice[\\s#]*no", "invoice[\\s#]*number", "inv[\\s#]*no", "inv#")
     invoice_date = _find_str(text, "invoice date", "date of invoice", "date issued", "issue date", "date")
     supplier_name = _find_str(text, "from", "vendor", "supplier", "billed by", "seller")

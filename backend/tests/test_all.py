@@ -506,10 +506,10 @@ class TestAPIEndpoints:
         mock_doc.id = doc_id
         self.mock_db.get.return_value = mock_doc
 
-        with patch("app.tasks.process.process_document_task.delay") as mock_delay:
+        with patch("app.api.documents._dispatch_processing") as mock_dispatch:
             res = self.client.post(f"/api/documents/{doc_id}/reprocess")
             assert res.status_code == 200
-            assert mock_delay.called
+            assert mock_dispatch.called
 
     def test_delete_document(self):
         doc_id = uuid.uuid4()
