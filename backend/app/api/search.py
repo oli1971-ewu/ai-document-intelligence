@@ -48,7 +48,7 @@ def _keyword_search(q: str, limit: int, db: Session) -> dict:
             {"q": q, "like": f"%{q}%", "limit": limit},
         ).fetchall()
     except Exception:
-        # Fallback: simple ILIKE
+        # Fallback: standard SQL (compatible with PostgreSQL and SQLite)
         rows = db.execute(
             text("""
                 SELECT d.id, d.filename, d.status, d.doc_type, d.created_at,
@@ -56,9 +56,9 @@ def _keyword_search(q: str, limit: int, db: Session) -> dict:
                        0.0 AS rank
                 FROM documents d
                 LEFT JOIN extracted_invoices e ON e.document_id = d.id
-                WHERE d.filename ILIKE :like
-                   OR e.invoice_number ILIKE :like
-                   OR e.supplier_name ILIKE :like
+                WHERE lower(d.filename) LIKE lower(:like)
+                   OR lower(coalesce(e.invoice_number, '')) LIKE lower(:like)
+                   OR lower(coalesce(e.supplier_name, '')) LIKE lower(:like)
                 ORDER BY d.created_at DESC
                 LIMIT :limit
             """),
@@ -71,7 +71,7 @@ def _keyword_search(q: str, limit: int, db: Session) -> dict:
             "filename": r[1],
             "status": r[2],
             "doc_type": r[3],
-            "created_at": r[4].isoformat() if r[4] else None,
+            "created_at": r[4].isoformat() if hasattr(r[4], "isoformat") else (str(r[4]) if r[4] else None),
             "invoice_number": r[5],
             "supplier_name": r[6],
             "total": float(r[7]) if r[7] is not None else None,
@@ -113,7 +113,7 @@ def _semantic_search(q: str, limit: int, db: Session) -> dict:
                 "filename": r[1],
                 "status": r[2],
                 "doc_type": r[3],
-                "created_at": r[4].isoformat() if r[4] else None,
+                "created_at": r[4].isoformat() if hasattr(r[4], "isoformat") else (str(r[4]) if r[4] else None),
                 "invoice_number": r[5],
                 "supplier_name": r[6],
                 "total": float(r[7]) if r[7] is not None else None,
