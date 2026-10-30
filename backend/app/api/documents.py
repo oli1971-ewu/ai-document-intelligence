@@ -44,6 +44,33 @@ def _sha256(path: str) -> str:
     return h.hexdigest()
 
 
+def _dispatch_processing(doc_id_str: str) -> None:
+    import socket
+    import threading
+    from app.tasks.process import process_document_task
+
+    redis_online = False
+    try:
+        s = socket.socket()
+        s.settimeout(0.2)
+        s.connect(("127.0.0.1", 6379))
+        s.close()
+        redis_online = True
+    except Exception:
+        redis_online = False
+
+    if redis_online:
+        try:
+            process_document_task.delay(doc_id_str)
+            return
+        except Exception:
+            pass
+
+    # Thread-based background fallback when Redis is offline or Celery fails
+    threading.Thread(target=process_document_task, args=(doc_id_str,), daemon=True).start()
+
+
+
 def _doc_to_dict(doc: Document) -> dict:
     return {
         "id": str(doc.id),
@@ -138,8 +165,8 @@ async def upload_documents(
         db.commit()
         db.refresh(doc)
 
-        # Dispatch Celery task
-        process_document_task.delay(str(doc_id))
+        # Dispatch processing asynchronously
+        _dispatch_processing(str(doc_id))
 
         results.append({
             "id": str(doc_id),
@@ -301,7 +328,7 @@ def reprocess_document(doc_id: uuid.UUID, db: Session = Depends(get_db)):
     doc.error = None
     db.commit()
 
-    process_document_task.delay(str(doc_id))
+    _dispatch_processing(str(doc_id))
     return {"message": "Document queued for reprocessing", "id": str(doc_id)}
 
 

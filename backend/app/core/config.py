@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = "redis://redis:6379/1"
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/2"
 
-    UPLOAD_DIR: str = "/app/storage/uploads"
+    UPLOAD_DIR: str = "storage/uploads"
     MAX_UPLOAD_MB: int = 50
 
     LLM_PROVIDER: str = "none"  # gemini | openai | none
@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
     EMBEDDING_DIM: int = 384
 
-    CORS_ORIGINS: str = "http://localhost:3000"
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,https://frontend-gamma-eight-24.vercel.app,https://frontend-amqz1p9kv-oli-ahmeds-projects.vercel.app"
 
     @property
     def cors_origins_list(self) -> list[str]:

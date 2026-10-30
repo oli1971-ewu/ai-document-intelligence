@@ -1,15 +1,14 @@
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import (
-    String, Integer, Numeric, DateTime, ForeignKey, Text, JSON, Index
+    String, Integer, Numeric, DateTime, ForeignKey, Text, JSON, Index, types
 )
-from sqlalchemy.dialects.postgresql import UUID, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pgvector.sqlalchemy import Vector
 
 from app.db.session import Base
 from app.core.config import settings
@@ -19,10 +18,77 @@ def _uuid() -> uuid.UUID:
     return uuid.uuid4()
 
 
+class PortableUUID(types.TypeDecorator):
+    impl = types.CHAR(36)
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == "postgresql":
+            from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+            return dialect.type_descriptor(PG_UUID(as_uuid=True))
+        return dialect.type_descriptor(types.CHAR(36))
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if dialect.name == "postgresql":
+            return value if isinstance(value, uuid.UUID) else uuid.UUID(str(value))
+        return str(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        if isinstance(value, uuid.UUID):
+            return value
+        return uuid.UUID(str(value))
+
+
+class PortableTSVector(types.TypeDecorator):
+    impl = types.Text
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == "postgresql":
+            from sqlalchemy.dialects.postgresql import TSVECTOR
+            return dialect.type_descriptor(TSVECTOR())
+        return dialect.type_descriptor(types.Text())
+
+
+class PortableVector(types.TypeDecorator):
+    impl = types.Text
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == "postgresql":
+            try:
+                from pgvector.sqlalchemy import Vector
+                return dialect.type_descriptor(Vector(settings.EMBEDDING_DIM))
+            except Exception:
+                pass
+        return dialect.type_descriptor(types.Text())
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if dialect.name != "postgresql" and isinstance(value, list):
+            return json.dumps(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except Exception:
+                pass
+        return value
+
+
 class Document(Base):
     __tablename__ = "documents"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    id: Mapped[uuid.UUID] = mapped_column(PortableUUID, primary_key=True, default=_uuid)
     filename: Mapped[str] = mapped_column(String(512))
     content_type: Mapped[str] = mapped_column(String(128))
     size_bytes: Mapped[int] = mapped_column(Integer, default=0)
@@ -38,8 +104,8 @@ class Document(Base):
 
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
-    search_tsv = mapped_column(TSVECTOR, nullable=True)
-    embedding = mapped_column(Vector(settings.EMBEDDING_DIM), nullable=True)
+    search_tsv = mapped_column(PortableTSVector, nullable=True)
+    embedding = mapped_column(PortableVector, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -61,9 +127,9 @@ Index("ix_documents_search_tsv", Document.search_tsv, postgresql_using="gin")
 class ExtractedInvoice(Base):
     __tablename__ = "extracted_invoices"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    id: Mapped[uuid.UUID] = mapped_column(PortableUUID, primary_key=True, default=_uuid)
     document_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), unique=True
+        PortableUUID, ForeignKey("documents.id", ondelete="CASCADE"), unique=True
     )
 
     invoice_number: Mapped[str | None] = mapped_column(String(128), index=True, nullable=True)
@@ -91,9 +157,9 @@ class ExtractedInvoice(Base):
 class LineItem(Base):
     __tablename__ = "line_items"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    id: Mapped[uuid.UUID] = mapped_column(PortableUUID, primary_key=True, default=_uuid)
     invoice_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("extracted_invoices.id", ondelete="CASCADE")
+        PortableUUID, ForeignKey("extracted_invoices.id", ondelete="CASCADE")
     )
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     quantity: Mapped[Decimal | None] = mapped_column(Numeric(14, 4), nullable=True)
@@ -107,9 +173,9 @@ class LineItem(Base):
 class ValidationIssue(Base):
     __tablename__ = "validation_issues"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    id: Mapped[uuid.UUID] = mapped_column(PortableUUID, primary_key=True, default=_uuid)
     document_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), index=True
+        PortableUUID, ForeignKey("documents.id", ondelete="CASCADE"), index=True
     )
     code: Mapped[str] = mapped_column(String(64))         # e.g. MISSING_FIELD, TOTAL_MISMATCH
     severity: Mapped[str] = mapped_column(String(16))     # info | warning | error
@@ -123,9 +189,9 @@ class ValidationIssue(Base):
 class ProcessingEvent(Base):
     __tablename__ = "processing_events"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    id: Mapped[uuid.UUID] = mapped_column(PortableUUID, primary_key=True, default=_uuid)
     document_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), index=True
+        PortableUUID, ForeignKey("documents.id", ondelete="CASCADE"), index=True
     )
     stage: Mapped[str] = mapped_column(String(64))      # processing | extraction | validation | ...
     status: Mapped[str] = mapped_column(String(32))     # started | ok | failed

@@ -38,8 +38,16 @@ def _event(db: Session, doc_id, stage: str, status: str, msg: str = None, ms: in
 
 
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=30)
-def process_document_task(self, document_id: str):
-    doc_id = uuid.UUID(document_id)
+def process_document_task(self_or_doc_id, document_id: str = None):
+    # Support both celery task invocation and direct thread invocation:
+    if document_id is None:
+        doc_id_str = str(self_or_doc_id)
+        task_obj = None
+    else:
+        doc_id_str = str(document_id)
+        task_obj = self_or_doc_id
+
+    doc_id = uuid.UUID(doc_id_str)
     db: Session = SessionLocal()
 
     try:
@@ -163,7 +171,8 @@ def process_document_task(self, document_id: str):
                 db.commit()
         except Exception:
             pass
-        raise self.retry(exc=exc)
+        if task_obj is not None and hasattr(task_obj, "retry"):
+            raise task_obj.retry(exc=exc)
     finally:
         db.close()
 
