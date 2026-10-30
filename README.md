@@ -3,7 +3,19 @@
 > **Senior AI Engineer Assessment Project**  
 > Automated document processing, AI extraction, validation, and search
 
+[![Production Web App](https://img.shields.io/badge/Live_Web_App-Vercel-success?style=for-the-badge&logo=vercel)](https://frontend-gamma-eight-24.vercel.app)
+[![API Documentation](https://img.shields.io/badge/API_Docs-FastAPI_Swagger-009688?style=for-the-badge&logo=fastapi)](https://divine-hollow-labs-reasoning.trycloudflare.com/docs)
+[![Tests Passing](https://img.shields.io/badge/Pytest-41%2F41_Passed-brightgreen?style=for-the-badge&logo=pytest)](https://github.com/oli1971-ewu/ai-document-intelligence)
+
 ---
+
+### 🌐 Live Production Demo
+- **Live Frontend**: [https://frontend-gamma-eight-24.vercel.app](https://frontend-gamma-eight-24.vercel.app)
+- **Interactive API Docs (Swagger UI)**: [https://divine-hollow-labs-reasoning.trycloudflare.com/docs](https://divine-hollow-labs-reasoning.trycloudflare.com/docs)
+- **API Health Check**: [https://divine-hollow-labs-reasoning.trycloudflare.com/api/health](https://divine-hollow-labs-reasoning.trycloudflare.com/api/health)
+
+---
+
 
 ## 🎯 Overview
 
