@@ -5,15 +5,15 @@ services:
     image: ankane/pgvector:latest
     container_name: doc_intel_postgres
     environment:
-      POSTGRES_USER: docuser
-      POSTGRES_PASSWORD: docpass
-      POSTGRES_DB: docdb
+      POSTGRES_USER: docintel
+      POSTGRES_PASSWORD: docintel
+      POSTGRES_DB: docintel
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U docuser -d docdb"]
+      test: ["CMD-SHELL", "pg_isready -U docintel -d docintel"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,16 +37,18 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+asyncpg://docuser:docpass@postgres:5432/docdb
-      SYNC_DATABASE_URL: postgresql://docuser:docpass@postgres:5432/docdb
+      DATABASE_URL: postgresql+psycopg://docintel:docintel@postgres:5432/docintel
       REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
       SECRET_KEY: super-secret-key-change-in-production
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
-      UPLOAD_DIR: /app/uploads
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-none}
+      UPLOAD_DIR: /app/storage/uploads
     volumes:
       - ./backend:/app
-      - uploads:/app/uploads
+      - uploads:/app/storage/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -60,15 +62,17 @@ services:
       dockerfile: Dockerfile
     container_name: doc_intel_celery
     environment:
-      DATABASE_URL: postgresql+asyncpg://docuser:docpass@postgres:5432/docdb
-      SYNC_DATABASE_URL: postgresql://docuser:docpass@postgres:5432/docdb
+      DATABASE_URL: postgresql+psycopg://docintel:docintel@postgres:5432/docintel
       REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
-      UPLOAD_DIR: /app/uploads
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-none}
+      UPLOAD_DIR: /app/storage/uploads
     volumes:
       - ./backend:/app
-      - uploads:/app/uploads
+      - uploads:/app/storage/uploads
     depends_on:
       postgres:
         condition: service_healthy
