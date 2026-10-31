@@ -320,11 +320,15 @@ doc-intel/
 
 ---
 
+## 📚 Documentation & Deliverables
+
+- 🏛️ [System Architecture & Database Schema](docs/ARCHITECTURE.md)
+- 📊 [Evaluation Report & Measured Metrics](docs/EVALUATION_REPORT.md)
+- 🤖 [AI Prompts & Development Disclosure](docs/AI_PROMPTS_AND_DISCLOSURE.md)
+
+---
+
 ## 🤝 AI Disclosure
 
-This project was built with assistance from **Google Antigravity AI** for:
-- Code scaffolding and boilerplate generation
-- Test case generation
-- Documentation writing
+This project was built with assistance from **Google Antigravity AI** for scaffolding, test generation, and documentation writing. All code and deployment architecture were reviewed, tested, and verified by the developer. Full prompt schemas and guardrail policies are documented in [docs/AI_PROMPTS_AND_DISCLOSURE.md](docs/AI_PROMPTS_AND_DISCLOSURE.md).
 
-All AI-generated code was reviewed, tested, and modified by the developer. The AI extraction feature (Gemini API / OpenAI) is an explicit requirement of the assessment.
