@@ -11,8 +11,8 @@
 
 ### 🌐 Live Production Demo
 - **Live Frontend**: [https://frontend-gamma-eight-24.vercel.app](https://frontend-gamma-eight-24.vercel.app)
-- **Interactive API Docs (Swagger UI)**: [https://divine-hollow-labs-reasoning.trycloudflare.com/docs](https://divine-hollow-labs-reasoning.trycloudflare.com/docs)
-- **API Health Check**: [https://divine-hollow-labs-reasoning.trycloudflare.com/api/health](https://divine-hollow-labs-reasoning.trycloudflare.com/api/health)
+- **Interactive API Docs (Swagger UI)**: [https://craig-citation-thesis-mart.trycloudflare.com/docs](https://craig-citation-thesis-mart.trycloudflare.com/docs)
+- **API Health Check**: [https://craig-citation-thesis-mart.trycloudflare.com/api/health](https://craig-citation-thesis-mart.trycloudflare.com/api/health)
 
 ![System Walkthrough Demo](docs/demo_walkthrough.webp)
 
