@@ -14,7 +14,10 @@
 - **Interactive API Docs (Swagger UI)**: [https://divine-hollow-labs-reasoning.trycloudflare.com/docs](https://divine-hollow-labs-reasoning.trycloudflare.com/docs)
 - **API Health Check**: [https://divine-hollow-labs-reasoning.trycloudflare.com/api/health](https://divine-hollow-labs-reasoning.trycloudflare.com/api/health)
 
+![System Walkthrough Demo](docs/demo_walkthrough.webp)
+
 ---
+
 
 
 ## 🎯 Overview
